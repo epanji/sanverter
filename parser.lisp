@@ -41,6 +41,11 @@
 (esrap:defrule subrip-time2 (and subrip-time1 " --> " subrip-time1)
   (:destructure (tm1 ig tm2)
     (declare (ignore ig))
+    ;; VTT will assuming tm2 as duration length if it is not greater than tm1
+    (unless (claraoke:duration-greaterp tm2 tm1)
+      (setf tm2 (claraoke:durationstring
+                 (claraoke:increase-duration
+                  (claraoke:duration tm2) tm1))))
     (list :start tm1 :end tm2)))
 
 (esrap:defrule subrip-timeline (and subrip-time2 gchar* newline)
