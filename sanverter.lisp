@@ -17,7 +17,7 @@
   (if (or (string-equal "srt" (pathname-type file.srt))
           (string-equal "vtt" (pathname-type file.srt)))
       (let* ((file.out (or output file.srt))
-             (file.ass (translate-pathname file.out "*.*" "*.ass"))
+             (file.ass (merge-pathnames (format nil "~A.ass" (pathname-name file.out)) file.out))
              (subtitle (apply 'parse-subrip file.srt args)))
         (with-open-file (stream file.ass :direction :output
                                          :if-exists if-exists
@@ -32,7 +32,7 @@
   (check-type output (or null pathname))
   (if (string-equal "ass" (pathname-type file.ass))
       (let* ((file.out (or output file.ass))
-             (file.srt (translate-pathname file.out "*.*" "*.srt")))
+             (file.srt (merge-pathnames (format nil "~A.srt" (pathname-name file.out)) file.out)))
         (with-open-file (stream file.srt :direction :output
                                          :if-exists if-exists
                                          :if-does-not-exist if-does-not-exist)
