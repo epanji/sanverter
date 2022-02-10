@@ -76,7 +76,7 @@
   (:destructure (ig1 ig2 ig3 ig4 ig5 co ig6 ig7 ig8)
     (declare (ignore ig1 ig2 ig3 ig4 ig5 ig6 ig7 ig8))
     (format nil "{\\1c~A}" (claraoke:colorstring co))))
-(esrap:defrule tag-color-close (and tag-open "/font" tag-close) (:constant "{\\r}"))
+(esrap:defrule tag-color-close (and tag-open "/font" tag-close) (:constant "{\\1c}"))
 
 (esrap:defrule html-tag (or tag-bold-open tag-bold-close
                             tag-italic-open tag-italic-close
