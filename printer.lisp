@@ -166,7 +166,10 @@
                       (fmt "<font color=\"#~2,'0X~2,'0X~2,'0X~@[~2,'0X~]\">"))
                  (princ (coerce (pop *newline-stack*) 'string) stream)
                  (format stream fmt r g b a)
-                 (push "</font>" *closer-stack*)))))))
+                 (push "</font>" *closer-stack*))))))
+  (:method ((object claraoke-text:reset) stream)
+    (princ (apply 'concatenate 'string *closer-stack*) stream)
+    (setf *closer-stack* '())))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
