@@ -134,7 +134,8 @@
     (let ((subtitle (apply 'claraoke:subtitle "" args)))
       (setf (claraoke:lines (claraoke:events subtitle)) object)
       (claraoke:sort-events subtitle)
-      (values subtitle object))))
+      ;; Does not return OBJECT because sort-events function is destructive
+      (values subtitle (claraoke:lines (claraoke:events subtitle))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
