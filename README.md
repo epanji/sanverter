@@ -10,12 +10,17 @@ Convert SRT file to ASS file and vise versa.
 
 Author: _Panji Kusuma (epanji@gmail.com)_
 
-### Drawback
+### Drawbacks
 
 - Detail timing will change due to milliseconds and centiseconds different.
 - Information such as title, style and some modifiers will loss due to conversion.
 - Only **bold**, *italic*, <u>underline</u>, <s>strikeout</s> and <font color="#00FFFF">colors</font> will be preserve.
 - Global styles did not preserve like local modifiers.
+
+## Dependencies
+
+- [esrap](https://github.com/scymtym/esrap)
+- [claraoke](https://github.com/epanji/claraoke)
 
 ## Primary features
 
