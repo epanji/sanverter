@@ -23,10 +23,6 @@
   (declare (ignore index stream))
   nil)
 
-(defmethod print-subrip ((object null) &optional (index 1) stream)
-  (declare (ignore index stream))
-  nil)
-
 (defmethod print-subrip ((object string) &optional (index 1) stream)
   (multiple-value-bind (subtitle dialogues) (parse-subrip object)
     (unless (null dialogues)
@@ -96,10 +92,6 @@
 
 (defgeneric print-text (object stream)
   (:method (object stream)
-    nil)
-  (:method ((object null) stream)
-    nil)
-  (:method ((object claraoke-text:modifier) stream)
     nil)
   (:method ((object claraoke-text:override) stream)
     (call-next-method object stream))
@@ -182,10 +174,6 @@
   (declare (ignore stream))
   nil)
 
-(defmethod print-subass ((object null) &optional stream)
-  (declare (ignore stream))
-  nil)
-
 (defmethod print-subass ((object string) &optional stream)
   (multiple-value-bind (subtitle dialogues)
       (parse-subass object)
@@ -204,7 +192,6 @@
         (print-subass subtitle stream)))))
 
 (defmethod print-subass ((object claraoke-subtitle:subtitle) &optional stream)
-  (claraoke:sort-events object)
   (claraoke:print-script object stream)
   nil)
 
