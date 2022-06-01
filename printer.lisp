@@ -204,6 +204,7 @@
         (print-subass subtitle stream)))))
 
 (defmethod print-subass ((object claraoke-subtitle:subtitle) &optional stream)
+  (claraoke:sort-events object)
   (claraoke:print-script object stream)
   nil)
 
