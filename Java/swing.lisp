@@ -11,17 +11,24 @@
        (jframe (java:jclass "javax.swing.JFrame"))
        (jtext (java:jclass "javax.swing.JTextField"))
        (jlabel (java:jclass "javax.swing.JLabel"))
+       (jimage (java:jclass "javax.swing.ImageIcon"))
        (jcheck (java:jclass "javax.swing.JCheckBox"))
+       (jcombo (java:jclass "javax.swing.JComboBox"))
        (jbutton (java:jclass "javax.swing.JButton"))
        (joption (java:jclass "javax.swing.JOptionPane"))
        (jfchooser (java:jclass "javax.swing.JFileChooser"))
        (jcchooser (java:jclass "javax.swing.JColorChooser"))
+       (jspinner (java:jclass "javax.swing.JSpinner"))
+       (spinner-number-model (java:jclass "javax.swing.SpinnerNumberModel"))
        (border-factory (java:jclass "javax.swing.BorderFactory"))
        (gb-layout (java:jclass "java.awt.GridBagLayout"))
        (gb-constraints (java:jclass "java.awt.GridBagConstraints"))
        (insets (java:jclass "java.awt.Insets"))
        (color (java:jclass "java.awt.Color"))
+       (font (java:jclass "java.awt.Font"))
+       (ievent (java:jclass "java.awt.event.ItemEvent"))
        (fchooser-filter (java:jclass "javax.swing.filechooser.FileNameExtensionFilter"))
+       (graphics-environment (java:jclass "java.awt.GraphicsEnvironment"))
        ;; fields
        (jframe->do-nothing (java:jfield jframe "DO_NOTHING_ON_CLOSE"))
        (jframe->dispose (java:jfield jframe "DISPOSE_ON_CLOSE"))
@@ -41,7 +48,13 @@
        (message->yes-no (java:jfield joption "YES_NO_OPTION"))
        (message->yes-no-cancel (java:jfield joption "YES_NO_CANCEL_OPTION"))
        (message->yes (java:jfield joption "YES_OPTION"))
-       (message->no (java:jfield joption "NO_OPTION")))
+       (message->no (java:jfield joption "NO_OPTION"))
+       (ievent->selected (java:jfield ievent "SELECTED"))
+       (ievent->deselected (java:jfield ievent "DESELECTED"))
+       (font->plain (java:jfield font "PLAIN"))
+       (font->bold (java:jfield font "BOLD"))
+       (font->italic (java:jfield font "ITALIC"))
+       (font->bold-italic (logxor font->bold font->italic)))
 
   (defun make-frame (&optional (title "Untitled"))
     (java:jnew jframe title))
@@ -55,11 +68,19 @@
                              (:center jlabel->center)
                              (:right jlabel->right))))
 
+  (defun make-image-label (image &optional (text "Label") (alignment :center))
+    (let ((label (make-label text alignment))
+          (icon (java:jnew jimage image)))
+      (java:jcall "setIcon" label icon) label))
+
   (defun make-text-field (&optional (text ""))
     (java:jnew jtext text))
 
   (defun make-check (&optional (text ""))
     (java:jnew jcheck text))
+
+  (defun make-combo (names)
+    (java:jnew jcombo names))
 
   (defun make-gb-layout ()
     (java:jnew gb-layout))
@@ -125,6 +146,34 @@
     (java:jcall "addActionListener" button
                 (make-action-listener function)))
 
+  (defun make-item-listener (item-function)
+    (java:jinterface-implementation
+     "java.awt.event.ItemListener"
+     "itemStateChanged"
+     (lambda (e)
+       (handler-case (funcall item-function e)
+         (java:java-exception (c)
+           (format t "~40A~%~40A~%" "handle-java-error:" c)
+           (force-output))))))
+
+  (defun add-item-listener (component function)
+    (java:jcall "addItemListener" component
+                (make-item-listener function)))
+
+  (defun make-change-listener (change-function)
+    (java:jinterface-implementation
+     "javax.swing.event.ChangeListener"
+     "stateChanged"
+     (lambda (e)
+       (handler-case (funcall change-function e)
+         (java:java-exception (c)
+           (format t "~40A~%~40A~%" "handle-java-error:" c)
+           (force-output))))))
+
+  (defun add-change-listener (component function)
+    (java:jcall "addChangeListener" component
+                (make-change-listener function)))
+
   (defun enable (component bool)
     (java:jcall "setEnabled" component
                 (ecase bool
@@ -142,7 +191,7 @@
                   (:true java:+true+)
                   (:false java:+false+))))
 
-  (defun add-component-constrains (container component rows nrows cols ncols)
+  (defun add-component-constraints (container component rows nrows cols ncols)
     (java:jcall "add" container component
                 (make-gb-constraints cols rows ncols nrows)))
 
@@ -233,5 +282,66 @@
     (let ((expected (ecase type
                       (:yes message->yes)
                       (:no message->no))))
-      (values (eql expected value) expected))))
+      (values (eql expected value) expected)))
+
+  (defun local-graphics-environment ()
+    (java:jstatic "getLocalGraphicsEnvironment"
+                  graphics-environment))
+
+  (defun selected-event (component &optional (state :selected))
+    (= (java:jcall "getStateChange" component)
+       (ecase state
+         (:selected ievent->selected)
+         (:deselected ievent->deselected))))
+
+  (defun selected-item (component &optional item)
+    (if (null item)
+        (java:jcall "getSelectedItem" component)
+        (java:jcall "setSelectedItem" component item)))
+
+  (defun ensure-font-name (&optional name)
+    (let ((names (font-names :vector)))
+      (flet ((find-name (string)
+               (find string names :test 'string-equal)))
+        (or (find-name name)
+            (find-name "Arial")
+            (aref names 0)))))
+
+  (defun font-names (&optional (type :vector))
+    (ecase type
+      (:vector
+       (java:jcall
+        "getAvailableFontFamilyNames"
+        (local-graphics-environment)))
+      (:raw
+       (java:jcall-raw
+        "getAvailableFontFamilyNames"
+        (local-graphics-environment)))
+      (:list
+       (coerce
+        (java:jcall
+         "getAvailableFontFamilyNames"
+         (local-graphics-environment))
+        'list))))
+
+  (defun make-font (name &optional size style)
+    (let ((fontstyle (case style
+                       (:bold font->bold)
+                       (:italic font->italic)
+                       ((:bold-italic :italic-bold) font->bold-italic)
+                       (otherwise font->plain)))
+          (fontsize (or size 12))
+          (fontname (ensure-font-name name)))
+      (java:jnew font fontname fontstyle fontsize)))
+
+  (defun make-spinner-number (value &key (min 0) (max 100) (step 1))
+    (let ((model (java:jnew spinner-number-model value min max step)))
+      (java:jnew jspinner model)))
+
+  (defgeneric value (component)
+    (:method (component)
+      (java:jcall "getValue" component)))
+  ;;
+  ;; End closure
+  )
 
