@@ -217,8 +217,7 @@
            (color (foreground-color component))
            (result (java:jstatic "showDialog" jcchooser
                                  component title color)))
-      (unless (java:jequal result java:+null+)
-        result)))
+      (unless (null result) result)))
 
   (defun foreground-color (component &optional c)
     (if (null c)
