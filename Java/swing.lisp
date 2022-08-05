@@ -307,21 +307,13 @@
             (aref names 0)))))
 
   (defun font-names (&optional (type :vector))
-    (ecase type
-      (:vector
-       (java:jcall
-        "getAvailableFontFamilyNames"
-        (local-graphics-environment)))
-      (:raw
-       (java:jcall-raw
-        "getAvailableFontFamilyNames"
-        (local-graphics-environment)))
-      (:list
-       (coerce
-        (java:jcall
-         "getAvailableFontFamilyNames"
-         (local-graphics-environment))
-        'list))))
+    (let ((names (java:jcall-raw
+                  "getAvailableFontFamilyNames"
+                  (local-graphics-environment))))
+      (ecase type
+        (:raw names)
+        (:vector (java:jobject-lisp-value names))
+        (:list (coerce (java:jobject-lisp-value names) 'list)))))
 
   (defun make-font (name &optional size style)
     (let ((fontstyle (case style

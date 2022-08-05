@@ -153,11 +153,11 @@
     (flet ((change-font ()
              (let ((fontname (selected-item fontname-dropdown))
                    (fontsize (value fontsize-spinner))
-                   (fstyle (logxor (checked-value bold-checkbox 1 0)
-                                   (checked-value italic-checkbox 2 0))))
+                   (fontstyle (logxor (checked-value bold-checkbox 1 0)
+                                      (checked-value italic-checkbox 2 0))))
                (java:jcall "setFont" open-color-button
                            (make-font fontname fontsize
-                                      (ecase fstyle
+                                      (ecase fontstyle
                                         (0 :plain)
                                         (1 :bold)
                                         (2 :italic)
