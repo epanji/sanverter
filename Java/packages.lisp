@@ -22,6 +22,7 @@
    #:local-graphics-environment
    #:make-action-listener
    #:make-button
+   #:make-byte-image
    #:make-change-listener
    #:make-check
    #:make-color

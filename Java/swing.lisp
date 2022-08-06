@@ -68,6 +68,9 @@
                              (:center jlabel->center)
                              (:right jlabel->right))))
 
+  (defun make-byte-image (vector)
+    (java:jnew-array-from-array "byte" vector))
+
   (defun make-image-label (image &optional (text "Label") (alignment :center))
     (let ((label (make-label text alignment))
           (icon (java:jnew jimage image)))

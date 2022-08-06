@@ -121,12 +121,6 @@
       (:list names)
       (otherwise *border-styles*))))
 
-;;; Image icon pathname
-(defvar *icon*
-  (merge-pathnames
-   "icon.jpg"
-   (asdf:system-source-directory "sanverter-java")))
-
 ;;; Main function
 (defun main ()
   (let* ((frame (make-frame "SANVERTER"))
@@ -148,7 +142,7 @@
          (border-style-dropdown (make-combo (border-styles :raw)))
          (vertical-margin-spinner (make-spinner-number 72))
          (fontshadow-spinner (make-spinner-number 1))
-         (icon-label (make-image-label (namestring *icon*) "" :left))
+         (icon-label (make-image-label *icon* "" :left))
          (open-color-button (make-button "Click me!")))
     (flet ((change-font ()
              (let ((fontname (selected-item fontname-dropdown))

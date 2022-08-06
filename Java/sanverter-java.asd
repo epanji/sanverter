@@ -10,5 +10,6 @@
   :components
   ((:file "packages")
    (:file "swing")
+   (:file "icon")
    (:file "main")))
 
