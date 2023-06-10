@@ -272,7 +272,7 @@
                            :primary-colour color-value)
                           stream))))
                  (show-message frame
-                               (format nil "Success converting file ~A to ~A"
+                               (format nil "Success converting file ~%~A to ~%~A"
                                        input output)
                                "Success"
                                :information)
