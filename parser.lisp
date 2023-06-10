@@ -85,9 +85,19 @@
                             tag-color-open tag-color-close)
   (:text t))
 
+(esrap:defrule char-quot "&quot;" (:constant "\""))
+(esrap:defrule char-amp "&amp;" (:constant "&"))
+(esrap:defrule char-apos "&apos;" (:constant "'"))
+(esrap:defrule char-nbsp "&nbsp;" (:constant " "))
+(esrap:defrule char-lt "&lt;" (:constant "<"))
+(esrap:defrule char-gt "&gt;" (:constant ">"))
+
+(esrap:defrule html-char (or char-quot char-amp char-apos
+                             char-nbsp char-lt char-gt))
+
 (esrap:defrule html-newline newline
   (:constant "\\N"))
-(esrap:defrule html-text (+ (or html-tag gchar))
+(esrap:defrule html-text (+ (or html-tag html-char gchar))
   (:text t))
 (esrap:defrule html-text-line (and html-text (or html-newline eof)))
 (esrap:defrule subrip-textline (and (+ html-text-line) (or newline eof))

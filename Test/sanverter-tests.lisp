@@ -46,6 +46,27 @@
     (is (string= 2str0 (pr-string 2str1)))
     (is (string= 2str0 (pr-string 2str2)))))
 
+(test html-character-for-subrip
+  (let ((1str0 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello &quot;world!&quot;~2%"))
+        (1str1 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello &amp; world!~2%"))
+        (1str2 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello &apos;world&apos;!~2%"))
+        (1str3 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello&nbsp;world!~2%"))
+        (1str4 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello&lt;world!~2%"))
+        (1str5 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello&gt;world!~2%"))
+        (2str0 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello \"world!\"~2%"))
+        (2str1 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello & world!~2%"))
+        (2str2 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello 'world'!~2%"))
+        (2str3 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello world!~2%"))
+        (2str4 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello<world!~2%"))
+        (2str5 (format nil "1~%00:01:00,000 --> 00:01:05,000~%Hello>world!~2%")))
+    (is (string= 2str0 (pr-string 1str0)))
+    (is (string= 2str1 (pr-string 1str1)))
+    (is (string= 2str2 (pr-string 1str2)))
+    (is (string= 2str3 (pr-string 1str3)))
+    (is (string= 2str4 (pr-string 1str4)))
+    (is (string= 2str5 (pr-string 1str5)))))
+
+
 (in-suite subass-suite)
 
 (test basic-dialogue-for-subass
