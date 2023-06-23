@@ -78,12 +78,13 @@
     (format nil "{\\1c~A}" (claraoke:colorstring co))))
 (esrap:defrule tag-color-close (and tag-open "/font" tag-close) (:constant "{\\1c}"))
 
-(esrap:defrule html-tag (or tag-bold-open tag-bold-close
-                            tag-italic-open tag-italic-close
-                            tag-underline-open tag-underline-close
-                            tag-strikeout-open tag-strikeout-close
-                            tag-color-open tag-color-close)
-  (:text t))
+(esrap:defrule html-tag (and (esrap:& tag-open)
+                             (or tag-bold-open tag-bold-close
+                                 tag-italic-open tag-italic-close
+                                 tag-underline-open tag-underline-close
+                                 tag-strikeout-open tag-strikeout-close
+                                 tag-color-open tag-color-close))
+  (:function second))
 
 (esrap:defrule char-quot "&quot;" (:constant "\""))
 (esrap:defrule char-amp "&amp;" (:constant "&"))
@@ -92,8 +93,10 @@
 (esrap:defrule char-lt "&lt;" (:constant "<"))
 (esrap:defrule char-gt "&gt;" (:constant ">"))
 
-(esrap:defrule html-char (or char-quot char-amp char-apos
-                             char-nbsp char-lt char-gt))
+(esrap:defrule html-char (and (esrap:& #\&)
+                              (or char-quot char-amp char-apos
+                                  char-nbsp char-lt char-gt))
+  (:function second))
 
 (esrap:defrule html-newline newline
   (:constant "\\N"))
