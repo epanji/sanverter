@@ -6,6 +6,7 @@
 ;;;
 (defvar *closer-stack* '())
 (defvar *newline-stack* '())
+(defvar *webvtt-language* nil)
 
 (defun pop-closer-stack (&optional closer)
   (typecase closer
@@ -17,7 +18,8 @@
     (otherwise nil)))
 
 (defgeneric print-subrip (object &optional index stream)
-  (:documentation "Return NIL after printing OBJECT argument with default INDEX argument to STREAM argument."))
+  (:documentation "Return NIL after printing OBJECT argument with default INDEX argument to STREAM argument.
+INDEX could be integer for counting or string language for WEBVTT compatible."))
 
 (defmethod print-subrip (object &optional index stream)
   (declare (ignore index stream))
@@ -47,17 +49,30 @@
     (print-subrip (reverse cons2) index stream)))
 
 (defmethod print-subrip ((object cons) &optional (index 1) stream)
-  (loop for i from index
-        for dialogue in object
-        do (print-subrip dialogue i stream)))
+  (if (integerp index)
+      (loop for i from index
+            for dialogue in object
+            do (print-subrip dialogue i stream))
+      (let ((stream (claraoke-internal:output-stream-from-designator stream))
+            (*webvtt-language* (if (stringp index) index "en")))
+        (princ "WEBVTT" stream)
+        (terpri stream)
+        (princ "Kind: captions" stream)
+        (terpri stream)
+        (princ "Language: " stream)
+        (princ *webvtt-language* stream)
+        (terpri stream)
+        (terpri stream)
+        (print-subrip object 1 stream))))
 
 (defmethod print-subrip ((object claraoke-subtitle:dialogue) &optional (index 1) stream)
   (let ((stream (claraoke-internal:output-stream-from-designator stream))
         (start (claraoke:start object))
         (end (claraoke:end object))
         (text (claraoke:.text object)))
-    (princ index stream)
-    (terpri stream)
+    (when (null *webvtt-language*)
+      (princ index stream)
+      (terpri stream))
     (princ (timestring start) stream)
     (princ " --> " stream)
     (princ (timestring end) stream)
@@ -68,11 +83,14 @@
 
 (defun timestring (object)
   (check-type object claraoke-duration:duration)
-  (format nil "~2,'0D:~2,'0D:~2,'0D,~3,'0D"
-          (claraoke:hours object)
-          (claraoke:minutes object)
-          (claraoke:seconds object)
-          (* 10 (claraoke:centiseconds object))))
+  (let ((control (if (null *webvtt-language*)
+                     "~2,'0D:~2,'0D:~2,'0D,~3,'0D"
+                     "~2,'0D:~2,'0D:~2,'0D.~3,'0D")))
+    (format nil control
+            (claraoke:hours object)
+            (claraoke:minutes object)
+            (claraoke:seconds object)
+            (* 10 (claraoke:centiseconds object)))))
 
 (defun textstring (object)
   (check-type object claraoke-text:text)
