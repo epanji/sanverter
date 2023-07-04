@@ -12,7 +12,6 @@
 (esrap:defrule gchar* (* gchar))
 
 (esrap:defrule space (or #\Space #\Tab))
-(esrap:defrule space+ (+ space))
 (esrap:defrule space* (* space))
 
 (esrap:defrule digit1 (or #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9))
@@ -38,9 +37,9 @@
   (:lambda (txt)
     (substitute #\. #\, (subseq txt 0 (1- (length txt))))))
 
-(esrap:defrule subrip-time2 (and subrip-time1 " --> " subrip-time1)
-  (:destructure (tm1 ig tm2)
-    (declare (ignore ig))
+(esrap:defrule subrip-time2 (and subrip-time1 space* "-->" space* subrip-time1)
+  (:destructure (tm1 ig1 ig2 ig3 tm2)
+    (declare (ignore ig1 ig2 ig3))
     ;; VTT will assuming tm2 as duration length if it is not greater than tm1
     (unless (claraoke:duration-greaterp tm2 tm1)
       (setf tm2 (claraoke:durationstring
