@@ -26,17 +26,22 @@
         file.ass)
       (error "Only allowing input file.srt or file.vtt!")))
 
-(defun convert-ass-to-srt (file.ass &key output (if-exists :rename) (if-does-not-exist :create))
-  "Return FILE path after successfully convert to SRT format."
+(defun convert-ass-to-srt (file.ass &key output language (if-exists :rename) (if-does-not-exist :create))
+  "Return FILE path after successfully convert to SRT or VTT compatible format by supplying LANGUAGE argument."
   (check-type file.ass pathname)
   (check-type output (or null pathname))
   (if (string-equal "ass" (pathname-type file.ass))
       (let* ((file.out (or output file.ass))
-             (file.srt (merge-pathnames (format nil "~A.srt" (pathname-name file.out)) file.out)))
+             (control (if (null language) "~A.srt" "~A.vtt"))
+             (index (cond ((null language) 1)
+                          ((integerp language) language)
+                          ((stringp language) language)
+                          (t "en")))
+             (file.srt (merge-pathnames (format nil control (pathname-name file.out)) file.out)))
         (with-open-file (stream file.srt :direction :output
                                          :if-exists if-exists
                                          :if-does-not-exist if-does-not-exist)
-          (print-subrip file.ass 1 stream))
+          (print-subrip file.ass index stream))
         file.srt)
       (error "Only allowing input file.ass!")))
 
