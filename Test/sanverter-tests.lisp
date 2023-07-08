@@ -66,6 +66,23 @@
     (is (string= 2str4 (pr-string 1str4)))
     (is (string= 2str5 (pr-string 1str5)))))
 
+(test cue-color-for-subrip
+  (let ((str0 (format nil "WEBVTT~%Kind: captions~%Language: en~2%STYLE~%::cue(.ffff00) { color: #ffff00; }~2%~
+                          00:01:00.000 --> 00:01:05.000~%<c.ffff00>Hello world!</c>~2%"))
+        (str1 (format nil "1~%00:01:00,000 --> 00:01:05,000~%<font color=#ff0>Hello world!~2%"))
+        (str2 (format nil "00:01:00.000 --> 00:00:05.000~%<c.yellow>Hello world!~2%"))
+        (str3 (format nil "STYLE~%::cue(.target) { color: #ffff00; }~2%00:01:00.000-->00:00:05.000~%<c.target>Hello world!~2%"))
+        (str4 (format nil "STYLE~%::cue(.target) {~%color: #ffff00;~%}~2%00:01:00.000-->00:00:05.000~%<c.target>Hello world!~2%"))
+        (str5 (format nil "STYLE~%::cue(.target) {~%background: white;~%color: #ffff00;~%}~2%00:01:00.000-->00:00:05.000~%<c.target>Hello world!~2%"))
+        (str6 (format nil "STYLE~%::cue(.target) {~%~2Tbackground: white;~%~2Tcolor: #ffff00;~%}~2%00:01:00.000-->00:00:05.000~%<c.target>Hello world!~2%"))
+        (str7 (format nil "STYLE~%::cue(.target) {~3%~2Tbackground: white;~4%~2Tcolor: #ffff00;~3%}~2%00:01:00.000-->00:00:05.000~%<c.target>Hello world!~2%")))
+    (is (string= str0 (pr-string str1 "en")))
+    (is (string= str0 (pr-string str2 "en")))
+    (is (string= str0 (pr-string str3 "en")))
+    (is (string= str0 (pr-string str4 "en")))
+    (is (string= str0 (pr-string str5 "en")))
+    (is (string= str0 (pr-string str6 "en")))
+    (is (string= str0 (pr-string str7 "en")))))
 
 (in-suite subass-suite)
 
