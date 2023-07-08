@@ -52,6 +52,45 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
+;;; CUE style rules
+;;;
+(defvar *cue-style* (make-hash-table :test 'equalp))
+
+(esrap:defrule cue-open (and space* "{" space* (esrap:? newline))
+  (:text t))
+(esrap:defrule cue-close (and space* "}" newline)
+  (:text t))
+(esrap:defrule cue-element (+ (or (alphanumericp character) #\# #\.))
+  (:text t))
+(esrap:defrule cue-newline newline
+  (:constant nil))
+(esrap:defrule cue-line (and space* (+ (not (or space ":"))) ":"
+                             space* (+ (not (or space ";"))) ";"
+                             (* (or newline space)))
+  (:constant nil))
+(esrap:defrule cue-color-line (and space* "color:"
+                                   space* (+ (not (or space ";"))) ";"
+                                   (* (or newline space)))
+  (:function fourth)
+  (:text t))
+(esrap:defrule cue-color (and "::cue(" cue-element ")"
+                              cue-open
+                              (+ (or cue-color-line
+                                     cue-line
+                                     cue-newline))
+                              cue-close)
+  (:lambda (lst)
+    (let ((el (second lst))
+          (co (first (remove nil (fifth lst)))))
+      (unless (null co)
+        (setf (gethash el *cue-style*) co)))
+    nil))
+
+(esrap:defrule cue-style (and "STYLE" newline (+ cue-color))
+  (:constant nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;; Text rules with tags
 ;;;
 (esrap:defrule tag-open (or "<" "&lt;"))
@@ -68,6 +107,17 @@
 (esrap:defrule html-color (and #\# (or digitx8 digitx6 digitx4 digitx3))
   (:text t))
 
+(esrap:defrule tag-cue-open (and tag-open "c" cue-element tag-close)
+  (:lambda (lst)
+    (let* ((el (third lst))
+           (hc (concatenate 'string "#" (subseq el 1)))
+           (de (if (claraoke-color:html-color-p hc)
+                   (claraoke:color hc)
+                   (claraoke:color el)))
+           (co (gethash el *cue-style* de)))
+      (format nil "{\\1c~A}" (claraoke:colorstring co)))))
+(esrap:defrule tag-cue-close (and tag-open "/c" tag-close) (:constant "{\\1c}"))
+
 (esrap:defrule tag-color-open (and tag-open (esrap:~ "font") space*
                                    (esrap:~ "color=") (esrap:? "\"")
                                    html-color
@@ -82,7 +132,8 @@
                                  tag-italic-open tag-italic-close
                                  tag-underline-open tag-underline-close
                                  tag-strikeout-open tag-strikeout-close
-                                 tag-color-open tag-color-close))
+                                 tag-color-open tag-color-close
+                                 tag-cue-open tag-cue-close))
   (:function second))
 
 (esrap:defrule char-quot "&quot;" (:constant "\""))
@@ -120,7 +171,7 @@
 ;;;
 ;;; Subrip rules
 ;;;
-(esrap:defrule subrip (+ (or dialogue ignored-line))
+(esrap:defrule subrip (+ (or cue-style dialogue ignored-line))
   (:lambda (result)
     (remove nil result)))
 
@@ -136,6 +187,7 @@
     (let ((string (alexandria:read-file-into-string object)))
       (apply 'parse-subrip string args)))
   (:method ((object string) &rest args)
+    (clrhash *cue-style*)
     (let* ((concat (concatenate 'string object (string #\Newline)))
            (dialogues (esrap:parse 'subrip concat)))
       (apply 'parse-subrip dialogues args)))
