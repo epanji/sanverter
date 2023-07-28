@@ -1,86 +1,33 @@
 ;;;;
-;;;; TMP BUILD
+;;;; Author: Panji Kusuma <epanji@gmail.com>
+;;;; Repository: https://github.com/epanji/sanverter
 ;;;;
-;;;; (progn (asdf:make-build
-;;;;         "sanverter"
-;;;;         :type :static-library
-;;;;         :move-here #p"./"
-;;;;         :monolithic t
-;;;;         :init-name "init_sanverter")
-;;;;        (compile-file "sanverter.lsp" :system-p t)
-;;;;        (c:build-program
-;;;;         "sanverter"
-;;;;         :lisp-files '("sanverter--all-systems.a"
-;;;;                       "sanverter.o")))
-;;;;
-
-(setq ext:*help-message* "Usage:
-  sanverter [option ...] <file>
-
-Global options:
-  -h,   --help                                Display this help message.
-  -v,   --version                             Display the version.
-  -d,   --debug                               Enable debug.
-  -f,   --format <value>                      Set output format with value options: 'ass', 'srt' or 'vtt'. (default ass)
-  -o,   --output <value>                      Set output name or full pathname without extension. (default nil)
-  -l,   --language <value>                    Set language for ASS and WEBVTT compatible format. (default nil)
-  -e,   --file-exists <value>                 Set action if file exists with value options: 'error', 'new-version', 'rename',
-                                              'rename-and-delete', 'overwrite', 'append', 'supersede', or 'nil'. (default error)
-
-Output ASS script options:
-  -prx, --play-resource-x <value>             Set resource x. (default 1280)
-  -pry, --play-resource-y <value>             Set resource y. (default 720)
-  -col, --collisions <value>                  Set collisions with value options: 'Normal' or 'Reverse'. (default Normal)
-  -wps, --wrap-style <value>                  Set wrap-style. (default 1)
-  -sbs, --scaled-border-and-shadow <value>    Set scaled border and shadow with value options: 'Yes' or 'No'. (default nil)
-  -tmr, --timer <value>                       Set timer. (default 100.0000)
-  -ttl, --title <value>                       Set title. (default Unknown)
-
-Output ASS style options:
-  -fn,  --font-name <value>                   Set font name. (default Arial)
-  -fs,  --font-size <value>                   Set font size. (default 36)
-  -pc,  --primary-color <value>               Set primary color. (default #EEDC82)
-  -sc,  --secondary-color <value>             Set secondary color. (default #000000D4)
-  -oc,  --outline-color <value>               Set outline color. (default #00000000)
-  -bc,  --back-color <value>                  Set back/shadow color. (default #00000000)
-  -b,   --bold <value>                        Enable font bold with -1 and disable it with 0. (default -1)
-  -i,   --italic <value>                      Enable font italic with -1 and disable it with 0. (default 0)
-  -u,   --underline <value>                   Enable font underline with -1 and disable it with 0. (default 0)
-  -s,   --strike-out <value>                  Enable font strike-out with -1 and disable it with 0. (default 0)
-  -sx,  --scale-x <value>                     Set scale for x value. (default 100)
-  -sy,  --scale-y <value>                     Set scale for y value. (default 100)
-  -sp,  --spacing <value>                     Set letter spacing. (default 0)
-  -a,   --angle <value>                       Set line angle. (default 0)
-  -bs,  --border-style <value>                Set border style. (default 1)
-  -oe,  --outline <value>                     Set outline thickness. (default 1)
-  -sw,  --shadow <value>                      Set shadow distance. (default 1)
-  -an,  --alignment <value>                   Set alignment according to numpad position. (default 2)
-  -ml,  --margin-left <value>                 Set margin left. (default 25)
-  -mr,  --margin-right <value>                Set margin right. (default 25)
-  -mv,  --margin-vertical <value>             Set margin vertical 'top and bottom'. (default 72)
-  -enc, --encoding <value>                    Set encoding. (default 1)
-")
 
 (defvar *debug* nil)
 
+(defvar *corrections* nil)
+
 (defvar *sanverter-options*
-  '(:format "ass"
+  `(:format "ass"
     :output nil
-    :if-exists :error
     :language nil
+    :if-exists :error
     :play-res-x 1280
     :play-res-y 720
+    :layout-res-x nil
+    :layout-res-y nil
     :collisions "Normal"
     :wrap-style 1
     :scaled-border-and-shadow nil
+    :kerning nil
     :timer "100.0000"
     :title "Unknown"
-    :fontname "Arial"
+    :fontname "DejaVu Sans"
     :fontsize 36
     :primary-colour "#EEDC82"
-    :secondary-colour "#000000D4"
+    :secondary-colour "#FFFFFF"
     :outline-colour "#00000000"
-    :back-colour "#00000000"
+    :back-colour "#000000D4"
     :bold -1
     :italic 0
     :underline 0
@@ -93,10 +40,105 @@ Output ASS style options:
     :outline 1
     :shadow 1
     :alignment 2
-    :style-margin-l 25
-    :style-margin-r 25
-    :style-margin-v 72
+    :style-margin-l ,(* 6 36)
+    :style-margin-r ,(* 6 36)
+    :style-margin-v ,(* 2 36)
     :encoding 1))
+
+(setq ext:*help-message* (format nil "~2&~
+SANVERTER is cross converter for some subtitle formats (vtt, srt, ass).
+
+Usage:
+  sanverter [option ...] <file>
+
+Global options:
+  -h,   --help                                Display this help message.
+  -v,   --version                             Display the version.
+  -d,   --debug                               Enable debug.
+  -c,   --corrections                         Enable corrections for same format.
+  -f,   --format <value>                      Set output format with value options: 'ass', 'srt' or 'vtt'. (default ~A)
+  -o,   --output <value>                      Set output name or full pathname without extension. (default ~A)
+  -l,   --language <value>                    Set language for ASS and WEBVTT compatible format. (default ~A)
+  -e,   --file-exists <value>                 Set action if file exists with value options: 'error', 'new-version', 'rename',
+                                              'rename-and-delete', 'overwrite', 'append', 'supersede', or 'nil'. (default ~A)
+
+Output ASS script options:
+  -prx, --play-resolution-x <value>           Set play resolution x. (default ~A)
+  -pry, --play-resolution-y <value>           Set play resolution y. (default ~A)
+  -lrx, --layout-resolution-x <value>         Set layout resolution x. (default ~A)
+  -lry, --layout-resolution-y <value>         Set layout resolution y. (default ~A)
+  -col, --collisions <value>                  Set collisions with value options: 'Normal' or 'Reverse'. (default ~A)
+  -wps, --wrap-style <value>                  Set wrap-style. (default ~A)
+  -sbs, --scaled-border-and-shadow <value>    Set scaled border and shadow with value options: 'Yes' or 'No'. (default ~A)
+  -krn, --kerning <value>                     Set kerning with value options: 'Yes' or 'No'. (default ~A)
+  -tmr, --timer <value>                       Set timer. (default ~A)
+  -ttl, --title <value>                       Set title. (default ~A)
+
+Output ASS style options:
+  -fn,  --font-name <value>                   Set font name. (default ~A)
+  -fs,  --font-size <value>                   Set font size. (default ~A)
+  -pc,  --primary-color <value>               Set primary color. (default ~A)
+  -sc,  --secondary-color <value>             Set secondary color. (default ~A)
+  -oc,  --outline-color <value>               Set outline color. (default ~A)
+  -bc,  --back-color <value>                  Set back/shadow color. (default ~A)
+  -b,   --bold <value>                        Enable font bold with -1 and disable it with 0. (default ~A)
+  -i,   --italic <value>                      Enable font italic with -1 and disable it with 0. (default ~A)
+  -u,   --underline <value>                   Enable font underline with -1 and disable it with 0. (default ~A)
+  -s,   --strike-out <value>                  Enable font strike-out with -1 and disable it with 0. (default ~A)
+  -sx,  --scale-x <value>                     Set scale x. (default ~A)
+  -sy,  --scale-y <value>                     Set scale y. (default ~A)
+  -sp,  --spacing <value>                     Set letter spacing. (default ~A)
+  -a,   --angle <value>                       Set line angle. (default ~A)
+  -bs,  --border-style <value>                Set border style. (default ~A)
+  -oe,  --outline <value>                     Set outline thickness. (default ~A)
+  -sw,  --shadow <value>                      Set shadow distance. (default ~A)
+  -an,  --alignment <value>                   Set alignment according to numpad layout. (default ~A)
+  -ml,  --margin-left <value>                 Set margin left. (default ~A)
+  -mr,  --margin-right <value>                Set margin right. (default ~A)
+  -mv,  --margin-vertical <value>             Set margin vertical 'top and bottom'. (default ~A)
+  -enc, --encoding <value>                    Set encoding. (default ~A)
+
+Author:
+  Panji Kusuma <epanji@gmail.com>
+
+License:
+  BSD-2-Clause license~2%"
+                                 (getf *sanverter-options* :format "Undefined")
+                                 (getf *sanverter-options* :output "Undefined")
+                                 (getf *sanverter-options* :language "Undefined")
+                                 (getf *sanverter-options* :if-exists "Undefined")
+                                 (getf *sanverter-options* :play-res-x "Undefined")
+                                 (getf *sanverter-options* :play-res-y "Undefined")
+                                 (getf *sanverter-options* :layout-res-x "Undefined")
+                                 (getf *sanverter-options* :layout-res-y "Undefined")
+                                 (getf *sanverter-options* :collisions "Undefined")
+                                 (getf *sanverter-options* :wrap-style "Undefined")
+                                 (getf *sanverter-options* :scaled-border-and-shadow "Undefined")
+                                 (getf *sanverter-options* :kerning "Undefined")
+                                 (getf *sanverter-options* :timer "Undefined")
+                                 (getf *sanverter-options* :title "Undefined")
+                                 (getf *sanverter-options* :fontname "Undefined")
+                                 (getf *sanverter-options* :fontsize "Undefined")
+                                 (getf *sanverter-options* :primary-colour "Undefined")
+                                 (getf *sanverter-options* :secondary-colour "Undefined")
+                                 (getf *sanverter-options* :outline-colour "Undefined")
+                                 (getf *sanverter-options* :back-colour "Undefined")
+                                 (getf *sanverter-options* :bold "Undefined")
+                                 (getf *sanverter-options* :italic "Undefined")
+                                 (getf *sanverter-options* :underline "Undefined")
+                                 (getf *sanverter-options* :strike-out "Undefined")
+                                 (getf *sanverter-options* :scale-x "Undefined")
+                                 (getf *sanverter-options* :scale-y "Undefined")
+                                 (getf *sanverter-options* :spacing "Undefined")
+                                 (getf *sanverter-options* :angle "Undefined")
+                                 (getf *sanverter-options* :border-style "Undefined")
+                                 (getf *sanverter-options* :outline "Undefined")
+                                 (getf *sanverter-options* :shadow "Undefined")
+                                 (getf *sanverter-options* :alignment "Undefined")
+                                 (getf *sanverter-options* :style-margin-l "Undefined")
+                                 (getf *sanverter-options* :style-margin-r "Undefined")
+                                 (getf *sanverter-options* :style-margin-v "Undefined")
+                                 (getf *sanverter-options* :encoding "Undefined")))
 
 (defun convert (file.any &rest args
                 &key output (format "ass") (if-exists :rename) (if-does-not-exist :create)
@@ -108,8 +150,16 @@ Output ASS style options:
   (remf args :if-exists)
   (remf args :if-does-not-exist)
   (when (string-equal format (pathname-type file.any))
-    (format t "~2&Convert nothing for ~A with option '-f ~A'.~2%" file.any format)
-    (return-from convert file.any))
+    (when (null *corrections*)
+      (format t "~2&Convert nothing for ~A with option '-f ~A' or '--format ~:*~A'.~@
+                If you are sure about this, add option '-c' or '--corrections'.~2%"
+              file.any format)
+      (return-from convert file.any))
+    (when (null output)
+      (setf output (merge-pathnames (format nil "~A-rev.~A"
+                                            (pathname-name file.any)
+                                            (pathname-type file.any))
+                                    file.any))))
   (let* ((index (cond ((string-equal "ass" format) nil)
                       ((string-equal "srt" format) 1)
                       ((string-equal "vtt" format) (getf args :language "en"))))
@@ -120,10 +170,14 @@ Output ASS style options:
                                                     :if-does-not-exist if-does-not-exist)
                     (if (string-equal "ass" format)
                         (sanverter:print-subass
-                         (apply (if (string-equal "ass" (pathname-type file.any))
-                                    'sanverter:parse-subass
-                                    'sanverter:parse-subrip)
-                                file.any args)
+                         (if (string-equal "ass" (pathname-type file.any))
+                             (let ((subass (sanverter:parse-subass file.any)))
+                               (setf (aref (claraoke:lines subass) 0)
+                                     (apply 'claraoke:script-info "" args))
+                               (claraoke:delete-style subass "Default")
+                               (claraoke:insert-style subass (apply 'claraoke:style "Default" args))
+                               subass)
+                             (apply 'sanverter:parse-subrip file.any args))
                          stream)
                         (sanverter:print-subrip file.any index stream)))
       (file-error ()
@@ -146,6 +200,9 @@ Output ASS style options:
      :noloadrc)
     (("-d" "--debug") 0
      (setf *debug* t)
+     :noloadrc)
+    (("-c" "--corrections") 0
+     (setf *corrections* t)
      :noloadrc)
     (("-f" "--format") 1
      (let ((format 1))
@@ -178,11 +235,17 @@ Output ASS style options:
                language)))
      :noloadrc)
     ;; Script
-    (("-prx" "--resource-x") 1
+    (("-prx" "--play-resolution-x") 1
      (setf (getf *sanverter-options* :play-res-x) 1)
      :noloadrc)
-    (("-pry" "--resource-y") 1
+    (("-pry" "--play-resolution-y") 1
      (setf (getf *sanverter-options* :play-res-y) 1)
+     :noloadrc)
+    (("-lrx" "--layout-resolution-x") 1
+     (setf (getf *sanverter-options* :layout-res-x) 1)
+     :noloadrc)
+    (("-lry" "--layout-resolution-y") 1
+     (setf (getf *sanverter-options* :layout-res-y) 1)
      :noloadrc)
     (("-col" "--collisions") 1
      (setf (getf *sanverter-options* :collisions) 1)
@@ -192,6 +255,9 @@ Output ASS style options:
      :noloadrc)
     (("-sbs" "--scaled-border-and-shadow") 1
      (setf (getf *sanverter-options* :scaled-border-and-shadow) 1)
+     :noloadrc)
+    (("-krn" "--kerning") 1
+     (setf (getf *sanverter-options* :kerning) 1)
      :noloadrc)
     (("-tmr" "--timer") 1
      (setf (getf *sanverter-options* :timer) 1)
@@ -285,3 +351,4 @@ Output ASS style options:
       (ext:quit 1))))
 
 (ext:quit 0)
+
