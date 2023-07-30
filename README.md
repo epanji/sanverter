@@ -226,6 +226,8 @@ This is **SANVERTER** when running with **ABCL** (Armed Bear Common Lisp) in **J
 
 This is command line interface build with **ECL** (Embeddable Common Lisp).
 
+Conversions
+
 ```sh
 $ ./sanverter -f vtt ../bad-source.srt
 
@@ -248,6 +250,20 @@ Hello world!
 00:02:40,000 --> 00:04:00,000
 <font color="#AABBCC">Hello <b>world!
 Hello world!</b></font>
+
+```
+
+Corrections
+
+```sh
+$ ./sanverter -f srt ../bad-source.srt
+
+Convert nothing for ../bad-source.srt with option '-f srt' or '--format srt'.
+If you are sure about this, add option '-c' or '--corrections'.
+
+$ ./sanverter -c -f srt ../bad-source.srt
+
+Success converting ../bad-source.srt to ../bad-source-rev.srt.
 
 ```
 
